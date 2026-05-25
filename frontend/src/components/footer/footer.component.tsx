@@ -51,6 +51,7 @@ if (!email || !emailRegex.test(email)) {
     { label: "Help Center", to: "/help"       },
     { label: "Community",   to: "/community"  },
     { label: "Guidelines",  to: "/guidelines" },
+    { label: "Report Bug",     to: import.meta.env.VITE_GITHUB_REPO_ISSUES_URL  },
   ];
 
   return (
@@ -152,10 +153,17 @@ if (!email || !emailRegex.test(email)) {
             <ul className="flex flex-col gap-[12.5px]">
               {resourceLinks.map(({ label, to }) => (
                 <li key={to}>
-                  <Link to={to} className="group relative inline-flex text-[14px] leading-none text-slate-300/85 transition-colors duration-200 hover:text-blue-300">
-                    {label}
-                    <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-blue-400/40 transition-all duration-300 ease-out group-hover:w-full" />
-                  </Link>
+                  {to && to.startsWith("http") ? (
+                    <a href={to} target="_blank" rel="noopener noreferrer" className="group relative inline-flex text-[14px] leading-none text-slate-300/85 transition-colors duration-200 hover:text-blue-300">
+                      {label}
+                      <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-blue-400/40 transition-all duration-300 ease-out group-hover:w-full" />
+                    </a>
+                  ) : (
+                    <Link to={to} className="group relative inline-flex text-[14px] leading-none text-slate-300/85 transition-colors duration-200 hover:text-blue-300">
+                      {label}
+                      <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-blue-400/40 transition-all duration-300 ease-out group-hover:w-full" />
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
