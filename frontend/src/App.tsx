@@ -335,19 +335,9 @@ function App() {
         <Route
           path="/contact-us"
           element={
-            <ProtectedRoute
-              element={
-                <RootLayout>
-                  <Contact />
-                </RootLayout>
-              }
-              allowedRoles={[
-                USER_ROLE.USER,
-                USER_ROLE.WRITER,
-                USER_ROLE.ADMIN,
-                USER_ROLE.SUPER_ADMIN,
-              ]}
-            />
+            <RootLayout>
+            <Contact />
+            </RootLayout>
           }
         />
         <Route
