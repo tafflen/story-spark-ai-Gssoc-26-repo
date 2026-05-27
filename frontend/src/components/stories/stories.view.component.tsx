@@ -195,8 +195,9 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   }, [topics]);
 
   useEffect(() => {
+    const player = audioPlayerRef.current;
     return () => {
-      audioPlayerRef.current?.stop();
+      player?.stop();
     };
   }, [location.pathname]);
 
@@ -268,7 +269,7 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [selectedStory?.content, isLogin, selectTopics, createPost]);
+  }, [selectedStory, selectedStory?.content, isLogin, selectTopics, createPost]);
 
   const handelStorySelection = (story: IStories) => {
     setSelectedStory(story);

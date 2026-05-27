@@ -3,8 +3,6 @@ import WritingAssistantComponent from "./components/writing-assistant/writing_as
 import CollabHome from "./components/collab/CollabHome";
 import CollabRoom from "./components/collab/CollabRoom";
 import AnalyticsDashboard from "./components/analytics/AnalyticsDashboard";
-import StoriesComponent from "./components/stories/stories.component";
-import AnalyticsPage from "./components/dashboard/analytics/analytics.page";
 import {
   createBrowserRouter,
   RouterProvider,
@@ -52,7 +50,8 @@ import MagicCursorComponent from "./components/magic-cursor/magic_cursor.compone
 import ContributorsComponent from "./components/footer/contributors";
 import BranchingStory from "./components/stories/BranchingStory";
 import ReportBug from "./components/report-bug/ReportBug";
-
+import StoriesComponent from "./components/stories/stories.component";
+import AnalyticsPage from "./components/dashboard/analytics/analytics.page";
 
 // =========================================================================
 // 1. REFACTORED PROTECTED ROUTE LAYER (Acts as a Layout Gate using <Outlet />)
@@ -100,6 +99,7 @@ const router = createBrowserRouter([
       { path: "stories", element: <StoriesComponent /> },
       { path: "login", element: <LoginComponent /> },
       { path: "signup", element: <SignUpComponent /> },
+      { path: "forgot-password", element: <ForgotPasswordComponent /> },
       { path: "pricing", element: <PricingComponent /> },
       { path: "post/:id", element: <PostDetailsComponent /> },
       { path: "help", element: <HelpCenterComponent /> },
@@ -112,6 +112,8 @@ const router = createBrowserRouter([
       { path: "help-center", element: <HelpCenterComponent /> },
       { path: "guidelines", element: <GuidelinesComponent /> },
       { path: "contributors", element: <ContributorsComponent /> },
+      { path: "branching-story", element: <BranchingStory /> },
+      { path: "report-bug", element: <ReportBug /> },
 
       // Protected Sub-Tree running under the RootLayout context
       {
@@ -165,8 +167,6 @@ const router = createBrowserRouter([
     ],
   },
 ]);
-
-
 // =========================================================================
 // 3. TARGET RUNTIME PROVIDER ENGINES
 // =========================================================================
