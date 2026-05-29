@@ -59,11 +59,10 @@ const FooterComponent = () => {
     { label: "Report Bug",   to: githubIssuesUrl },
   ];
 
-
   const legalLinks = [
-    { label: "Privacy", to: "/privacy-policy" },
+    { label: "Privacy Policy", to: "/privacy-policy" },
     { label: "Cookie Policy", to: "/cookie-policy" },
-    { label: "Terms", to: "/terms" },
+    { label: "Terms & Conditions", to: "/terms" },
     { label: "Guidelines", to: "/guidelines" },
   ];
 
@@ -176,16 +175,16 @@ const FooterComponent = () => {
               ))}
             </ul>
           </div>
+
           {/* Follow Us */}
           <div className="col-span-6 md:col-span-2 flex flex-col gap-4">
             <h3 className="text-[11.5px] font-bold tracking-[0.22em] uppercase text-white/70">
               Follow Us
             </h3>
-
             <ul className="flex flex-col gap-[12.5px]">
               {socialLinks.map((item) => (
                 <li key={item.icon}>
-                  <a
+                  
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -257,21 +256,19 @@ const FooterComponent = () => {
           </div>
           <div className="flex items-center gap-2.5">
             {legalLinks.map(({ label, to }, i) => (
-  <span key={label}>
-    <Link to={to}>
-      {label}
-    </Link>
-
-    {i < legalLinks.length - 1 && (
-      <span className="text-white/[0.12]">|</span>
-    )}
-  </span>
-))}
+              <span key={label}>
+                <Link to={to} className="hover:text-blue-300 transition-colors duration-200">
+                  {label}
+                </Link>
+                {i < legalLinks.length - 1 && (
+                  <span className="ml-2.5 text-white/[0.12]">|</span>
+                )}
+              </span>
+            ))}
           </div>
-
         </div>
-        </div>
-</footer>
+      </div>
+    </footer>
   );
 };
 
