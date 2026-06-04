@@ -1,9 +1,18 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import DOMPurify from "dompurify";
-import { getShortenedText, ITopicData, topicsData, getWordCount, SELECTED_TOPIC_CLASSES } from "./stories.utils";
+import {
+  getShortenedText,
+  ITopicData,
+  topicsData,
+  getWordCount,
+  SELECTED_TOPIC_CLASSES,
+} from "./stories.utils";
 import { formatReadingStats } from "../../utils/story-utils";
 import toast, { Toaster } from "react-hot-toast";
-import { useCreatePostMutation, useDeletePostMutation } from "../../redux/apis/post.api";
+import {
+  useCreatePostMutation,
+  useDeletePostMutation,
+} from "../../redux/apis/post.api";
 import { useGetProfileInfoQuery } from "../../redux/apis/user.api";
 import jsPDF from "jspdf";
 import StoryWorldMap from "../story-map/StoryWorldMap";
@@ -11,7 +20,10 @@ import StoryRemix from "../remix/StoryRemix";
 import BookmarkButton from "../BookmarkButton";
 import logo from "../../assets/logoNew.png";
 import StoryGeneratingAnimation from "../loading/story-generating-animation.component";
-import AudioPlayer, { type AudioPlayerHandle, type NarrationPlaybackState } from "../AudioPlayer";
+import AudioPlayer, {
+  type AudioPlayerHandle,
+  type NarrationPlaybackState,
+} from "../AudioPlayer";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
@@ -20,8 +32,10 @@ import {
 } from "../../redux/apis/ai.model.api";
 import ImageFallback from "../ImageFallback";
 import GeneratedStoryTimeline from "./GeneratedStoryTimeline";
+import { Copy, Check } from "lucide-react";
 
-// --- Custom Error Classes & Helper Types ---
+// ─── Custom Error Classes ────────────────────────────────────────────────────
+
 export class ApiError extends Error {
   constructor(public readonly status: number, message: string) {
     super(message);
@@ -31,27 +45,29 @@ export class ApiError extends Error {
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.status === 429) {
+    if (error.status === 429)
       return "The AI service is currently busy. Please wait a moment and try again.";
-    }
-    if ([502, 503, 504].includes(error.status)) {
+    if ([502, 503, 504].includes(error.status))
       return "The server took too long to respond. Please try again shortly.";
-    }
-    if (error.status >= 500) {
+    if (error.status >= 500)
       return "A server error occurred. Please try again later.";
-    }
   }
-  if (error instanceof TypeError) {
+  if (error instanceof TypeError)
     return "Could not reach the server. Please check your connection and try again.";
-  }
   return "An unexpected error occurred. Please try again.";
 }
 
-// Dummy themes helper (Ensure it works or adjust imports)
-const getGenreTheme = (tag: string) => {
-  return { gradient: "45deg, #1e1b4b, #311042", accent: "#a855f7", icon: "✨" };
-};
+// ─── Genre Theme Helper ──────────────────────────────────────────────────────
+
+const getGenreTheme = (_tag: string) => ({
+  gradient: "45deg, #1e1b4b, #311042",
+  accent: "#a855f7",
+  icon: "✨",
+});
+
 const getInitials = (title: string) => title.slice(0, 2).toUpperCase();
+
+// ─── StoryCoverImage ─────────────────────────────────────────────────────────
 
 interface StoryCoverImageProps {
   title?: string;
@@ -111,20 +127,89 @@ const StoryCoverImage: React.FC<StoryCoverImageProps> = ({
         ...style,
       }}
     >
-      <div style={{ position: "absolute", top: "-30%", right: "-15%", width: "60%", height: "120%", background: "rgba(255,255,255,0.08)", borderRadius: "50%", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", bottom: "-20%", left: "-10%", width: "45%", height: "80%", background: "rgba(0,0,0,0.12)", borderRadius: "50%", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", top: "12px", right: "16px", fontSize: "3.5rem", color: theme.accent, opacity: 0.35, lineHeight: 1, userSelect: "none", pointerEvents: "none", fontWeight: 300 }}>{theme.icon}</div>
-      <div style={{ position: "absolute", top: "14px", left: "14px", background: "rgba(0,0,0,0.28)", backdropFilter: "blur(6px)", color: "#fff", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", padding: "3px 10px", borderRadius: "999px", border: `1px solid ${theme.accent}55`, userSelect: "none" }}>{tag}</div>
-      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontSize: "5rem", fontWeight: 900, color: "rgba(255,255,255,0.12)", letterSpacing: "-0.04em", lineHeight: 1, userSelect: "none", pointerEvents: "none" }}>{initials}</div>
+      <div
+        style={{
+          position: "absolute", top: "-30%", right: "-15%",
+          width: "60%", height: "120%",
+          background: "rgba(255,255,255,0.08)",
+          borderRadius: "50%", pointerEvents: "none",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute", bottom: "-20%", left: "-10%",
+          width: "45%", height: "80%",
+          background: "rgba(0,0,0,0.12)",
+          borderRadius: "50%", pointerEvents: "none",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute", top: "12px", right: "16px",
+          fontSize: "3.5rem", color: theme.accent,
+          opacity: 0.35, lineHeight: 1,
+          userSelect: "none", pointerEvents: "none", fontWeight: 300,
+        }}
+      >
+        {theme.icon}
       </div>
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)", padding: "32px 14px 12px" }}>
-        <p style={{ margin: 0, color: "#fff", fontSize: "0.9rem", fontWeight: 700, lineHeight: 1.3, textShadow: "0 1px 6px rgba(0,0,0,0.5)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{title}</p>
+      <div
+        style={{
+          position: "absolute", top: "14px", left: "14px",
+          background: "rgba(0,0,0,0.28)", backdropFilter: "blur(6px)",
+          color: "#fff", fontSize: "0.65rem", fontWeight: 700,
+          letterSpacing: "0.12em", textTransform: "uppercase",
+          padding: "3px 10px", borderRadius: "999px",
+          border: `1px solid ${theme.accent}55`, userSelect: "none",
+        }}
+      >
+        {tag}
+      </div>
+      <div
+        style={{
+          position: "absolute", inset: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            fontSize: "5rem", fontWeight: 900,
+            color: "rgba(255,255,255,0.12)",
+            letterSpacing: "-0.04em", lineHeight: 1,
+            userSelect: "none", pointerEvents: "none",
+          }}
+        >
+          {initials}
+        </div>
+      </div>
+      <div
+        style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)",
+          padding: "32px 14px 12px",
+        }}
+      >
+        <p
+          style={{
+            margin: 0, color: "#fff", fontSize: "0.9rem",
+            fontWeight: 700, lineHeight: 1.3,
+            textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
+          {title}
+        </p>
       </div>
     </div>
   );
 };
 
+// ─── Interfaces ──────────────────────────────────────────────────────────────
+
+// FIX #1896: Added missing genre/emotions/enhancedPrompt to IStories
 export interface IStories {
   uuid: string;
   title: string;
@@ -132,6 +217,9 @@ export interface IStories {
   tag: string;
   imageURL: string;
   language?: string;
+  genre?: string;
+  emotions?: string[];
+  enhancedPrompt?: string;
 }
 
 interface IPost extends IStories {
@@ -151,6 +239,8 @@ interface IRelatedStoriesComponentProps {
   currentPostId: string;
 }
 
+// ─── Sentence Segments ───────────────────────────────────────────────────────
+
 type StorySentenceSegment = {
   id: string;
   text: string;
@@ -169,8 +259,8 @@ const buildSentenceSegments = (content: string): StorySentenceSegment[] => {
     if (!trimmedSentence) return;
     const wordsInSentence = sentence.match(/\S+/g)?.length ?? 0;
     const startWordIndex = wordCursor;
-    const endWordIndex = wordsInSentence > 0 ? wordCursor + wordsInSentence - 1 : wordCursor;
-
+    const endWordIndex =
+      wordsInSentence > 0 ? wordCursor + wordsInSentence - 1 : wordCursor;
     segments.push({
       id: `${index}-${startWordIndex}-${endWordIndex}`,
       text: sentence,
@@ -182,29 +272,37 @@ const buildSentenceSegments = (content: string): StorySentenceSegment[] => {
   return segments;
 };
 
-export const RelatedStoriesComponent: React.FC<IRelatedStoriesComponentProps> = ({ posts, currentPostId }) => {
-  const navigate = useNavigate();
-  const filteredPosts = posts.filter((post) => post._id !== currentPostId);
+// ─── RelatedStoriesComponent ─────────────────────────────────────────────────
 
-  return (
-    <div className="mt-8">
-      <h4 className="text-lg font-bold text-slate-200 mb-4">Related Content</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredPosts.map((post) => (
-          <div
-            key={post._id}
-            onClick={() => navigate(`/stories/${post._id}`)}
-            className="p-4 bg-slate-700/40 rounded-xl border border-slate-600/30 cursor-pointer hover:bg-slate-700/60 transition-colors"
-          >
-            <p className="text-sm font-semibold text-white truncate">{post.title}</p>
-          </div>
-        ))}
+export const RelatedStoriesComponent: React.FC<IRelatedStoriesComponentProps> =
+  ({ posts, currentPostId }) => {
+    const navigate = useNavigate();
+    const filteredPosts = posts.filter((post) => post._id !== currentPostId);
+
+    return (
+      <div className="mt-8">
+        <h4 className="text-lg font-bold text-slate-200 mb-4">
+          Related Content
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredPosts.map((post) => (
+            <div
+              key={post._id}
+              onClick={() => navigate(`/stories/${post._id}`)}
+              className="p-4 bg-slate-700/40 rounded-xl border border-slate-600/30 cursor-pointer hover:bg-slate-700/60 transition-colors"
+            >
+              <p className="text-sm font-semibold text-white truncate">
+                {post.title}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-// ─── Main Component ─────────────────────────────────────────────────────────
+// ─── Main Component ──────────────────────────────────────────────────────────
+
 const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   stories,
   isLogin,
@@ -214,36 +312,46 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   const dispatch = useDispatch();
   const audioPlayerRef = useRef<AudioPlayerHandle>(null);
 
-  // Error handling states
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Standard functional states
   const [selectedStory, setSelectedStory] = useState<IStories | null>(null);
   const [topics, setTopics] = useState<ITopicData[]>(topicsData);
   const [selectTopics, setSelectTopics] = useState<ITopicData[]>([]);
   const [newTopicTitle, setNewTopicTitle] = useState<string>("");
-  const [isCopied, setIsCopied] = useState<boolean>(false);
+
+  // FIX #1807: track copied story by UUID instead of boolean
+  const [copiedUUID, setCopiedUUID] = useState<string | null>(null);
+  // FIX #1894: declare missing showRemix state
+  const [showRemix, setShowRemix] = useState<boolean>(false);
 
   const [createPost] = useCreatePostMutation();
   const [deletePost] = useDeletePostMutation();
-  const { data: profile } = useGetProfileInfoQuery(undefined, { skip: !isLogin });
-  
+  const { data: profile } = useGetProfileInfoQuery(undefined, {
+    skip: !isLogin,
+  });
+
   const lastSavedContentRef = useRef<string>("");
   const isSavingRef = useRef<boolean>(false);
   const hasSavedSessionRef = useRef<boolean>(false);
   const savedPostIdRef = useRef<string | null>(null);
 
-  const [isGeneratingEndings, setIsGeneratingEndings] = useState<boolean>(false);
+  const [isGeneratingEndings, setIsGeneratingEndings] =
+    useState<boolean>(false);
   const [endingsCache, setEndingsCache] = useState<{
     [uuid: string]: { style: string; ending: string; fullStory: string }[];
   }>({});
-  const [originalStoryContent, setOriginalStoryContent] = useState<{ [uuid: string]: string }>({});
+  const [originalStoryContent, setOriginalStoryContent] = useState<{
+    [uuid: string]: string;
+  }>({});
 
   const [narrationWordIndex, setNarrationWordIndex] = useState<number>(0);
-  const [narrationState, setNarrationState] = useState<NarrationPlaybackState>("idle");
+  const [narrationState, setNarrationState] =
+    useState<NarrationPlaybackState>("idle");
 
   const [generateAlternateEndings] = useGenerateAlternateEndingsMutation();
-  const [generateFreeAlternateEndings] = useGenerateFreeAlternateEndingsMutation();
+  const [generateFreeAlternateEndings] =
+    useGenerateFreeAlternateEndingsMutation();
+
+  // ── Effects ────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (selectedStory && !originalStoryContent[selectedStory.uuid]) {
@@ -261,12 +369,13 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   useEffect(() => {
     setNarrationWordIndex(0);
     setNarrationState("idle");
-    setErrorMessage(null); // Clear errors when switching stories
+    setErrorMessage(null);
   }, [selectedStory?.uuid]);
 
-  const sentenceSegments = useMemo(() => {
-    return buildSentenceSegments(selectedStory?.content ?? "");
-  }, [selectedStory?.content]);
+  const sentenceSegments = useMemo(
+    () => buildSentenceSegments(selectedStory?.content ?? ""),
+    [selectedStory?.content]
+  );
 
   useEffect(() => {
     if (stories && stories.length > 0) {
@@ -279,6 +388,22 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
     savedPostIdRef.current = null;
   }, [stories]);
 
+  // ── Handlers ───────────────────────────────────────────────────────────────
+
+  // FIX #1807: copy with "Copied!" toast and auto-reset
+  const handleCopy = (story: IStories) => {
+    navigator.clipboard
+      .writeText(story.content)
+      .then(() => {
+        setCopiedUUID(story.uuid);
+        toast.success("Story copied to clipboard!");
+        setTimeout(() => setCopiedUUID(null), 2000);
+      })
+      .catch(() => {
+        toast.error("Failed to copy story.");
+      });
+  };
+
   const handleGenerateAlternateEndings = async () => {
     if (!selectedStory) return;
 
@@ -289,7 +414,8 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
     try {
       const payload = {
         title: selectedStory.title,
-        content: originalStoryContent[selectedStory.uuid] || selectedStory.content,
+        content:
+          originalStoryContent[selectedStory.uuid] || selectedStory.content,
         tag: selectedStory.tag,
         language: selectedStory.language || "English",
       };
@@ -300,33 +426,51 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
 
       const res = await generationRequest.unwrap();
 
-      // Guard check validation
       if (!res || !Array.isArray(res.data)) {
         throw new Error("Invalid response from server");
       }
 
-      setEndingsCache((prev) => ({ ...prev, [selectedStory.uuid]: res.data }));
+      setEndingsCache((prev) => ({
+        ...prev,
+        [selectedStory.uuid]: res.data,
+      }));
       toast.success("Alternate endings generated successfully!");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[StoriesView Alternate Ending Flow Failure]:", err);
-      const errorStatus = err?.status || err?.data?.status;
+      const anyErr = err as Record<string, unknown>;
+      const errorStatus =
+        (anyErr?.status as number) ||
+        ((anyErr?.data as Record<string, unknown>)?.status as number);
       const parsedMessage = errorStatus
-        ? getErrorMessage(new ApiError(errorStatus, err?.data?.message || ""))
-        : err?.message || "An unexpected failure occurred.";
-      
+        ? getErrorMessage(
+            new ApiError(
+              errorStatus,
+              ((anyErr?.data as Record<string, unknown>)
+                ?.message as string) || ""
+            )
+          )
+        : (anyErr?.message as string) || "An unexpected failure occurred.";
+
       setErrorMessage(parsedMessage);
       toast.error("Failed to generate alternate endings.");
-    } {
+    // FIX: was malformed `} {` — corrected to `} finally {`
+    } finally {
       toast.dismiss(toastId);
-      setIsGeneratingEndings(false); // Fixes infinite spinner
+      setIsGeneratingEndings(false);
     }
   };
 
-  const handleApplyEnding = (endingData: { style: string; ending: string; fullStory: string }) => {
+  const handleApplyEnding = (endingData: {
+    style: string;
+    ending: string;
+    fullStory: string;
+  }) => {
     if (!selectedStory) return;
     const updatedStory = { ...selectedStory, content: endingData.fullStory };
     setSelectedStory(updatedStory);
-    setStories(stories.map((s) => (s.uuid === selectedStory.uuid ? updatedStory : s)));
+    setStories(
+      stories.map((s) => (s.uuid === selectedStory.uuid ? updatedStory : s))
+    );
     toast.success(`${endingData.style} applied to story!`);
   };
 
@@ -336,23 +480,27 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
     if (!originalContent) return;
     const updatedStory = { ...selectedStory, content: originalContent };
     setSelectedStory(updatedStory);
-    setStories(stories.map((s) => (s.uuid === selectedStory.uuid ? updatedStory : s)));
+    setStories(
+      stories.map((s) => (s.uuid === selectedStory.uuid ? updatedStory : s))
+    );
     toast.success("Reverted to original story ending!");
   };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="p-6 bg-slate-900 min-h-screen text-white">
       <Toaster />
-      
-      {/* Step 16: Error Banner Component UI Layout Rendering */}
+
+      {/* Error Banner */}
       {errorMessage && (
         <div className="error-banner mb-6 p-4 bg-amber-500/20 border border-amber-500 rounded-xl text-amber-200 flex justify-between items-center animate-fadeIn">
           <div className="flex items-center gap-3">
             <span>⚠️</span>
             <p className="text-sm font-medium">{errorMessage}</p>
           </div>
-          <button 
-            onClick={() => setErrorMessage(null)} 
+          <button
+            onClick={() => setErrorMessage(null)}
             className="text-xs uppercase font-bold tracking-wider hover:text-white px-2 py-1"
           >
             Dismiss
@@ -368,21 +516,111 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
               {selectedStory.content}
             </div>
 
-            {/* Step 17: Generate Button disables during loading phase */}
-            <button
-              onClick={handleGenerateAlternateEndings}
-              disabled={isGeneratingEndings}
-              className={`px-5 py-2.5 rounded-xl font-bold transition-all text-white ${
-                isGeneratingEndings 
-                  ? "bg-slate-700 cursor-not-allowed opacity-50" 
-                  : "bg-indigo-600 hover:bg-indigo-500 active:scale-95 shadow-md shadow-indigo-600/20"
-              }`}
-            >
-              {isGeneratingEndings ? "Generating Endings..." : "Generate Alternate Endings"}
-            </button>
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-3">
+
+              {/* FIX #1807: Copy button with Copied! feedback */}
+              <button
+                onClick={() => handleCopy(selectedStory)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                  copiedUUID === selectedStory.uuid
+                    ? "bg-green-600/20 border border-green-500/50 text-green-400"
+                    : "bg-slate-700 hover:bg-slate-600 border border-slate-600/50 text-slate-200 active:scale-95"
+                }`}
+                title={
+                  copiedUUID === selectedStory.uuid ? "Copied!" : "Copy story"
+                }
+              >
+                {copiedUUID === selectedStory.uuid ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>Copy</span>
+                  </>
+                )}
+              </button>
+
+              {/* Generate Alternate Endings */}
+              <button
+                onClick={handleGenerateAlternateEndings}
+                disabled={isGeneratingEndings}
+                className={`px-5 py-2 rounded-xl font-bold transition-all text-white text-sm ${
+                  isGeneratingEndings
+                    ? "bg-slate-700 cursor-not-allowed opacity-50"
+                    : "bg-indigo-600 hover:bg-indigo-500 active:scale-95 shadow-md shadow-indigo-600/20"
+                }`}
+              >
+                {isGeneratingEndings
+                  ? "Generating Endings..."
+                  : "Generate Alternate Endings"}
+              </button>
+
+              {/* FIX #1894: Remix toggle using declared showRemix state */}
+              <button
+                onClick={() => setShowRemix((prev) => !prev)}
+                className="px-4 py-2 rounded-xl font-semibold text-sm bg-slate-700 hover:bg-slate-600 border border-slate-600/50 text-slate-200 transition-all active:scale-95"
+              >
+                {showRemix ? "Hide Remix" : "Remix Story"}
+              </button>
+            </div>
+
+            {/* Remix Panel — all required props passed */}
+            {showRemix && (
+              <StoryRemix
+                story={selectedStory as IStories}
+                isLogin={isLogin}
+                onRemixComplete={(remixedStory: IStories) => {
+                  setStories([...stories, remixedStory]);
+                  setSelectedStory(remixedStory);
+                  setShowRemix(false);
+                  toast.success("Remix added!");
+                }}
+                onClose={() => setShowRemix(false)}
+              />
+            )}
+
+            {/* Alternate Endings Panel */}
+            {endingsCache[selectedStory.uuid]?.length > 0 && (
+              <div className="mt-6 space-y-3">
+                <h3 className="text-lg font-bold text-slate-200">
+                  Alternate Endings
+                </h3>
+                {endingsCache[selectedStory.uuid].map((ending, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 bg-slate-700/40 rounded-xl border border-slate-600/30"
+                  >
+                    <p className="text-sm font-semibold text-indigo-400 mb-1">
+                      {ending.style}
+                    </p>
+                    <p className="text-slate-300 text-sm">{ending.ending}</p>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => handleApplyEnding(ending)}
+                        className="px-3 py-1 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
+                      >
+                        Apply
+                      </button>
+                      <button
+                        onClick={handleResetEnding}
+                        className="px-3 py-1 text-xs font-bold rounded-lg bg-slate-600 hover:bg-slate-500 text-white transition-colors"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
-          <div className="text-center py-12 text-slate-500">No stories available.</div>
+          <div className="text-center py-12 text-slate-500">
+            No stories available.
+          </div>
         )}
       </div>
     </div>
