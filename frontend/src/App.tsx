@@ -34,6 +34,7 @@ import NotFoundComponent from "./components/not-found.component";
 import PaymentComponent from "./components/home/pricing/payment.component";
 import PostDetailsComponent from "./components/post/post.details.component";
 import PostListsComponent from "./components/dashboard/posts/post_lists.component";
+import PromptHistoryDashboard from "./components/stories/PromptHistoryDashboard";
 import PricingComponent from "./components/pricing/pricing.component";
 import PrivacyPolicy from "./components/footer/Privacy.tsx";
 import ProfileComponent from "./components/dashboard/profile/profile.component";
@@ -140,6 +141,14 @@ const router = createBrowserRouter([
         element: (
           <SimpleProtectedRoute>
             <StoriesComponent />
+          </SimpleProtectedRoute>
+        ),
+      },
+      {
+        path: "prompt-history",
+        element: (
+          <SimpleProtectedRoute>
+            <PromptHistoryDashboard />
           </SimpleProtectedRoute>
         ),
       },
